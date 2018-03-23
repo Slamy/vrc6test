@@ -1,11 +1,11 @@
-NAME = hello_world
+NAME = vrc6test
 EMULATOR = fceux
 
-build:
-	cc65 -Oi $(NAME).c --add-source
+$(NAME).nes: *.c *.s
+	cc65 --target nes -Oi $(NAME).c --add-source
 	ca65 $(NAME).s
 	ca65 reset.s
-	ld65 -C $(NAME).cfg -o $(NAME).nes reset.o $(NAME).o nes.lib
+	ld65 --mapfile map -C $(NAME).cfg -o $(NAME).nes reset.o $(NAME).o nes.lib
 
 clean:
 	rm -f ./$(NAME).s

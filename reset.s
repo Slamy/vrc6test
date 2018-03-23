@@ -2,6 +2,8 @@
 
 .import _main
 .export __STARTUP__:absolute=1
+.import _NSF_PLAY
+.import _NSF_INIT
 
 ; linker-generated symbols
 
@@ -28,10 +30,10 @@ APU_FRAME_CTR = $4017
 ; see http://wiki.nesdev.com/w/index.php/INES
 
 .byte $4e, $45, $53, $1a ; "NES" followed by MS-DOS EOF
-.byte $01                ; size of PRG ROM in 16 KiB units
+.byte $10                ; size of PRG ROM in 16 KiB units
 .byte $01                ; size of CHR ROM in 8 KiB units
-.byte $00                ; horizontal mirroring, mapper 000 (NROM)
-.byte $00                ; mapper 000 (NROM)
+.byte $80                ; horizontal mirroring, mapper 024 (NROM)
+.byte $10                ; mapper 024 (NROM)
 .byte $00                ; size of PRG RAM in 8 KiB units
 .byte $00                ; NTSC
 .byte $00                ; unused
@@ -122,14 +124,87 @@ start:
 
 	lda PPU_STATUS ; reset the PPU latch
 
+	;jsr _NSF_INIT
+	
+	jsr init_apu
+
+	;cli
+	
     jmp _main ; call into our C main()
 
+init_apu:
+        ; Init $4000-4013
+        ldy #$13
+@loop:  lda @regs,y
+        sta $4000,y
+        dey
+        bpl @loop
+ 
+        ; We have to skip over $4014 (OAMDMA)
+        lda #$0f
+        sta $4015
+        lda #$40
+        sta $4017
+        
+        rts
+@regs:
+        .byte $30,$08,$00,$00
+        .byte $30,$08,$00,$00
+        .byte $80,$00,$00,$00
+        .byte $30,$00,$00,$00
+        .byte $00,$00,$00,$00
+        
+        
 ; do nothing for interrupts
 nmi:
+	rti
+	
 irq:
+	rti
+
+	pha
+	
+	txa
+	pha
+	
+	tya
+	pha
+	
+	php
+	
+	;jsr _NSF_PLAY
+	
+	plp
+	
+	pla
+	tay
+	
+	pla
+	tax
+	
+	pla
+	
     rti
 
 .segment "RODATA"
+
+
+.segment "CODE0"
+.segment "CODE1"
+.segment "CODE2"
+.segment "CODE3"
+.segment "CODE4"
+.segment "CODE5"
+.segment "CODE6"
+.segment "CODE7"
+.segment "CODE8"
+.segment "CODE9"
+.segment "CODEa"
+.segment "CODEb"
+.segment "CODEc"
+.segment "CODEd"
+.segment "CODEe"
+.segment "CODEf"
 
 ; nothing yet
 
