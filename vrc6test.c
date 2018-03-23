@@ -108,7 +108,7 @@ void main(void) {
 		PPU.vram.data = (uint8_t) TEXT[i];
 	}
 
-	showScreen(TEXT, sizeof(TEXT));
+	//showScreen(TEXT, sizeof(TEXT));
 
 	// reset scroll location to top-left of screen
 	PPU.scroll = 0x00;
