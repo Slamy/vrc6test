@@ -2,12 +2,13 @@
 
 .import _main
 .export __STARTUP__:absolute=1
-.import _NSF_PLAY
-.import _NSF_INIT
+.export _WaitVBlank
+.exportzp _FrameCount
+
 
 ; linker-generated symbols
 
-.import __STACK_START__, __STACK_SIZE__
+.import __RAM_START__   ,__RAM_SIZE__
 .include "zeropage.inc"
 
 ; definitions
@@ -22,7 +23,7 @@ APU_FRAME_CTR = $4017
 
 .segment "ZEROPAGE"
 
-; no variables
+_FrameCount: .res 1
 
 .segment "HEADER"
 
@@ -116,74 +117,27 @@ start:
 	lda #$02 ; use page $0200-$02ff
 	sta OAM_DMA
 
-	; set the C stack pointer
-	lda #<(__STACK_START__ + __STACK_SIZE__)
-	sta sp
-	lda #>(__STACK_START__+__STACK_SIZE__)
-	sta sp+1
+	lda #<(__RAM_START__+__RAM_SIZE__)
+	sta	sp
+	lda	#>(__RAM_START__+__RAM_SIZE__)
+	sta	sp+1            ; Set argument stack ptr
+
 
 	lda PPU_STATUS ; reset the PPU latch
 
-	;jsr _NSF_INIT
-
-	jsr init_apu
-
-	;cli
-
 	jmp _main ; call into our C main()
-
-init_apu:
-	; Init $4000-4013
-	ldy #$13
-@loop:  lda @regs,y
-	sta $4000,y
-	dey
-	bpl @loop
-
-	; We have to skip over $4014 (OAMDMA)
-	lda #$0f
-	sta $4015
-	lda #$40
-	sta $4017
-
-	rts
-@regs:
-	.byte $30,$08,$00,$00
-	.byte $30,$08,$00,$00
-	.byte $80,$00,$00,$00
-	.byte $30,$00,$00,$00
-	.byte $00,$00,$00,$00
-        
-        
-; do nothing for interrupts
+    
+    ; Wait for start of VBLANK
+_WaitVBlank:
+	bit PPU_STATUS
+	bpl _WaitVBlank
+    rts
+		
 nmi:
-	rti
-	
-irq:
+	inc _FrameCount
 	rti
 
-	pha
-	
-	txa
-	pha
-	
-	tya
-	pha
-	
-	php
-	
-	;jsr _NSF_PLAY
-	
-	plp
-	
-	pla
-	tay
-	
-	pla
-	tax
-	
-	pla
-	
+irq:
 	rti
 
 .segment "RODATA"
