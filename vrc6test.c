@@ -21,7 +21,6 @@
 
 // define PPU register aliases
 #define VRC6_PPU_BANKING_STYLE	*((uint8_t*)0xB003)
-#define VRC6_CHR_SELECT			*((uint8_t*)0xB003)
 
 // define palette color aliases
 #define COL_BLACK 0x0f
@@ -42,16 +41,17 @@ const char INTRO_TEXT[] =
 		"According to a few sources I    "
 		"could find, it's specified that "
 		"the maximum volume of the pulse "
-		"waves should be equally loud on "
-		"the VRC6 and the internal APU.  "
+		"waves should be about as loud on"
+		"the VRC6 as on the internal APU."
 		"With FamiTracker this is the    "
-		"case for example.               "
+		"case for example. Sadly not with"
+		"nestopia I've used as reference."
 		"                                "
 		"This program shall help you to  "
 		"verify your configuration by    "
 		"outputting 440 Hz pulse waves.  "
 		"Consider visiting the forum of  "
-		"krikzz.com for further tipps    "
+		"krikzz.com for further tipps.   "
 		"                                "
 		"Hold A for a VRC6 pulse wave.   "
 		"                                "
@@ -67,8 +67,8 @@ const char INTRO_TEXT[] =
 const uint8_t PALETTE[] =
 {
 	COL_BLACK,	// background color
-	COL_WHITE,	// background palette 0
-	COL_WHITE,
+	COL_BLACK,	// background palette 0
+	COL_BLACK,
 	COL_BLACK
 };
 
@@ -83,6 +83,14 @@ void showScreen(const char *str)
 	PPU.vram.address = 0x40;
 	while (*str)
 		PPU.vram.data = (uint8_t) *(str++);
+}
+
+void setAttributeTable()
+{
+	PPU.vram.address = 0x23;
+	PPU.vram.address = 0xC0;
+	for (i=0; i< 64;i++)
+		PPU.vram.data = 0;
 }
 
 void showStatusBar(const char *str)
@@ -120,25 +128,26 @@ void setPaletteValue(unsigned char index, unsigned char val)
 	PPU.scroll = 0x00;
 }
 
-/**
- * main() will be called at the end of the initialization code in reset.s.
- * Unlike C programs on a computer, it takes no arguments and returns no value.
- */
 void main(void)
 {
 	//linear address space for CHRRAM
+	VRC6_PPU_BANKING_STYLE = 0x10;
+
+#if 1
 	*((uint8_t*) 0xD000) = 0;
 	*((uint8_t*) 0xD001) = 1;
 	*((uint8_t*) 0xD002) = 2;
 	*((uint8_t*) 0xD003) = 3;
+#endif
 
 	//init some registers to prepare sound registers
 	VRC6.frequency_scaling = 0;
 
-	//Full volume, 440 Hz according to FamiTracker
+	//440 Hz according to FamiTracker
+	//Not full volume, but according to FCEUX about as loud as full volume on APU
 	VRC6.pulse1.period_low = 0xfd;
 	VRC6.pulse1.period_high = 0x80;
-	VRC6.pulse1.duty_volume = 0x7f;
+	VRC6.pulse1.duty_volume = 0x7e;
 
 	APU.status = 0x0f;
 	APU.fcontrol = 0x40;
@@ -153,6 +162,7 @@ void main(void)
 	DISABLE_APU
 
 	setPalette(PALETTE, sizeof(PALETTE));
+	setAttributeTable();
 
 	showScreen(INTRO_TEXT);
 
@@ -160,10 +170,9 @@ void main(void)
 	PPU.scroll = 0x00;
 	PPU.scroll = 0x00;
 
-	// enable NMI and rendering
-	PPU.control = 0x00;
-	PPU.mask = 0x1e;
 
+	PPU.control = 0x00;	// disable NMI
+	PPU.mask = 0x0A; //enable rendering
 
 	//some in fading ;-)
 	for (i = 0; i < 3; i++)
