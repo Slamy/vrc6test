@@ -1,6 +1,8 @@
 NAME = vrc6test
 EMULATOR = fceux
 
+all: $(NAME).nes
+
 $(NAME).nes: *.c *.s *.h Makefile
 	cc65 --target nes vrc6test.c
 	

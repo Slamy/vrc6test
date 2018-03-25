@@ -3,3 +3,7 @@ map
 vrc6test.nes
 vrc6test.s
 
+/.cproject
+/.project
+/.settings/
+/nbproject/

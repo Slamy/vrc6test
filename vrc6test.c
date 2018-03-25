@@ -1,4 +1,3 @@
-
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -51,14 +50,15 @@ const char TEXT[] =
 	"                                "
 	"                         Slamy  ";
 
-//const char TEXT[] = "orldorldorld!";
-
-const uint8_t PALETTE[] = {
-	COL_BLACK,                           // background color
-	COL_WHITE, COL_WHITE, COL_WHITE, // background palette 0
+const uint8_t PALETTE[] =
+{
+	COL_BLACK,	// background color
+	COL_WHITE,	// background palette 0
+	COL_WHITE,
+	COL_WHITE,
 };
 
-void showScreen (const char *str)
+void showScreen(const char *str)
 {
 	// load the text sprites into the background (nametable 0)
 	// nametable 0 is VRAM $2000-$23ff, so we'll choose an address in the
@@ -79,22 +79,23 @@ void showStatusBar(const char *str)
 		PPU.vram.data = (uint8_t) *(str++);
 }
 
-
 /**
  * main() will be called at the end of the initialization code in reset.s.
  * Unlike C programs on a computer, it takes no arguments and returns no value.
  */
-void main(void) {
-	
-	*((uint8_t*)0xD000)=0;
-	*((uint8_t*)0xD001)=1;
-	*((uint8_t*)0xD002)=2;
-	*((uint8_t*)0xD003)=3;
+void main(void)
+{
+
+	*((uint8_t*) 0xD000) = 0;
+	*((uint8_t*) 0xD001) = 1;
+	*((uint8_t*) 0xD002) = 2;
+	*((uint8_t*) 0xD003) = 3;
 
 	// load the palette data into PPU memory $3f00-$3f1f
 	PPU.vram.address = 0x3f;
 	PPU.vram.address = 0x00;
-	for ( i = 0; i < sizeof(PALETTE); ++i ) {
+	for (i = 0; i < sizeof(PALETTE); ++i)
+	{
 		PPU.vram.data = PALETTE[i];
 	}
 
@@ -111,19 +112,18 @@ void main(void) {
 	VRC6.pulse1.period_high = 0x80;
 	VRC6.pulse1.duty_volume = 0x7f;
 
-	APU.status=0x0f;
-	APU.fcontrol=0x40;
-	
+	APU.status = 0x0f;
+	APU.fcontrol = 0x40;
+
 	//Full volume, 440 Hz according to FamiTracker
-	APU.pulse[0].ramp=0x08;
-	APU.pulse[0].period_low=0xfd;
-	APU.pulse[0].len_period_high=0x00;
-	APU.pulse[0].control=0xbf;
-	
+	APU.pulse[0].ramp = 0x08;
+	APU.pulse[0].period_low = 0xfd;
+	APU.pulse[0].len_period_high = 0x00;
+	APU.pulse[0].control = 0xbf;
+
 	// enable NMI and rendering
 	PPU.control = 0x80;
 	PPU.mask = 0x1e;
-
 
 #define DISABLE_APU		APU.pulse[0].control = 0x30;
 #define ENABLE_APU		APU.pulse[0].control = 0xbf;
@@ -133,19 +133,19 @@ void main(void) {
 
 #define DISABLE_VRC6	VRC6.pulse1.period_high = 0x00;
 #define ENABLE_VRC6		VRC6.pulse1.period_high = 0x80;
-	
+
 	DISABLE_VRC6
 	DISABLE_APU
-	
+
 	// infinite loop
 	while (1)
 	{
 		WaitVBlank();
-		
-		if ( old_joystick_state != joystick_state)
+
+		if (old_joystick_state != joystick_state)
 		{
 			alternatingMode = (joystick_state & JOY_START_MASK);
-			
+
 			if (joystick_state & JOY_BTN_A_MASK)
 			{
 				//Enable VRC6, Disable APU
@@ -170,43 +170,42 @@ void main(void) {
 			// reset scroll location to top-left of screen
 			PPU.scroll = 0x00;
 			PPU.scroll = 0x00;
-			
+
 			old_joystick_state = joystick_state;
-			
+
 		}
 
 		if (alternatingMode)
 		{
-			
+
 			switch (alternatingMode)
 			{
-				case 1:
-					//Enable APU, Disable VRC6
-					DISABLE_VRC6
-					ENABLE_APU
-					showStatusBar("APU      ");
-					break;
-				case 1+20:
-					//Enable VRC6, Disable APU
-					DISABLE_APU
-					ENABLE_VRC6
-					showStatusBar("     VRC6");
-					break;
-				case 1+20+20:
-					alternatingMode=0;
+			case 1:
+				//Enable APU, Disable VRC6
+				DISABLE_VRC6
+				ENABLE_APU
+				showStatusBar("APU      ");
+				break;
+			case 1 + 20:
+				//Enable VRC6, Disable APU
+				DISABLE_APU
+				ENABLE_VRC6
+				showStatusBar("     VRC6");
+				break;
+			case 1 + 20 + 20:
+				alternatingMode = 0;
 			}
 			alternatingMode++;
-			
+
 			// reset scroll location to top-left of screen
 			PPU.scroll = 0x00;
 			PPU.scroll = 0x00;
-			
+
 		}
-		
+
 		joystick_read(0);
-		
-		
-		
-	};
-};
+
+	}
+}
+
 
